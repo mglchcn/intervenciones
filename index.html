@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plataforma de Monitoreo - Centro de Gobierno</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; }
+        .sidebar { position: sticky; top: 0; height: 100vh; box-shadow: inset -1px 0 0 rgba(0,0,0,.1); }
+        .card { border: none; border-radius: 10px; }
+        .table th { white-space: nowrap; }
+        .chart-container { position: relative; height: 500px; width: 100%; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-3 col-lg-2 d-md-block bg-dark sidebar text-white p-3 min-vh-100">
+                <h4 class="text-center mb-4">🇧🇴 Tablero CdG</h4>
+                <hr>
+                
+                <div class="mb-4 p-2 bg-secondary rounded">
+                    <label for="excelFileInput" class="form-label text-white small fw-bold">1. Cargar Archivo Excel:</label>
+                    <input class="form-control form-control-sm" type="file" id="excelFileInput" accept=".xlsx, .xls, .csv">
+                </div>
+
+                <h6 class="text-uppercase text-muted mt-4 mb-2">Filtros de Datos</h6>
+                <div class="mb-3">
+                    <label for="ejeFilter" class="form-label small">Eje:</label>
+                    <select id="ejeFilter" class="form-select form-select-sm" onchange="applyFilters()">
+                        <option value="Todos">Todos los Ejes</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="ministerioFilter" class="form-label small">Entidad/Ministerio:</label>
+                    <select id="ministerioFilter" class="form-select form-select-sm" onchange="applyFilters()">
+                        <option value="Todos">Todas las Entidades</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="intervencionFilter" class="form-label small">Intervención:</label>
+                    <select id="intervencionFilter" class="form-select form-select-sm" onchange="applyFilters()">
+                        <option value="Todas">Todas las Intervenciones</option>
+                    </select>
+                </div>
+            </nav>
+
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4 bg-light">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Distribución de Intervenciones</h1>
+                </div>
+
+                <div id="welcomeMessage" class="alert alert-info shadow-sm" role="alert">
+                    Bienvenido. Haz clic en el botón <strong>"Elegir archivo"</strong> en el menú lateral izquierdo y selecciona la Matriz de Indicadores para cargar los datos offline.
+                </div>
+
+                <div class="row mb-4" id="kpiSection" style="display: none;">
+                    <div class="col-md-4">
+                        <div class="card text-white bg-primary shadow-sm">
+                            <div class="card-body py-2">
+                                <h6 class="card-title mb-0">Total Intervenciones Filtradas</h6>
+                                <h2 id="kpi-total" class="mb-0">0</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-4" id="chartSection" style="display: none;">
+                    <div class="col-md-12 bg-white p-3 rounded shadow-sm">
+                        
+                        <div class="row mb-3 pb-3 border-bottom">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-primary">Mostrar en el Eje Principal (Vertical):</label>
+                                <select id="chartDim1" class="form-select form-select-sm" onchange="updateChart()">
+                                    <option value="Eje">Ejes</option>
+                                    <option value="Ministerio(s)">Ministerios/Entidades</option>
+                                    <option value="Intervención">Intervenciones</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-success">Agrupar por Colores (Divisiones):</label>
+                                <select id="chartDim2" class="form-select form-select-sm" onchange="updateChart()">
+                                    <option value="Ministerio(s)">Ministerios/Entidades</option>
+                                    <option value="Eje">Ejes</option>
+                                    <option value="Ninguno">Ninguno (Total Unificado)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="chart-container">
+                            <canvas id="mainChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-3 rounded shadow-sm" id="tableSection" style="display: none;">
+                    <h5>Detalle de Intervenciones</h5>
+                    <div class="table-responsive mt-3">
+                        <table class="table table-striped table-hover table-sm" id="dataTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Eje</th>
+                                    <th>Intervención</th>
+                                    <th>Entidad(es) Involucrada(s)</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        let globalData = [];
+        let lastFilteredData = []; // Guardará los datos tras aplicar filtros
+        let chartInstance = null;
+
+        const chartColors = [
+            '#0d6efd', '#198754', '#ffc107', '#dc3545', '#6f42c1',
+            '#fd7e14', '#0dcaf0', '#20c997', '#d63384', '#6610f2',
+            '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'
+        ];
+
+        document.getElementById('excelFileInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    
+                    let sheetName = workbook.SheetNames.find(name => name.toLowerCase().includes('proceso'));
+                    if (!sheetName) sheetName = workbook.SheetNames[0];
+
+                    const worksheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { range: 3, defval: "" });
+
+                    globalData = jsonData.filter(row => row['Eje'] && row['Eje'].toString().trim() !== '');
+
+                    if(globalData.length === 0) {
+                        alert("No se encontraron datos. Verifica que seleccionaste la Matriz correcta.");
+                        return;
+                    }
+
+                    document.getElementById('welcomeMessage').style.display = 'none';
+                    document.getElementById('kpiSection').style.display = 'flex';
+                    document.getElementById('chartSection').style.display = 'flex';
+                    document.getElementById('tableSection').style.display = 'block';
+
+                    populateFilters();
+                    applyFilters();
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        });
+
+        function extraerMinisterios(cadena) {
+            if (!cadena) return [];
+            return cadena.toString().split(/[;/]/).map(item => item.trim()).filter(item => item !== "");
+        }
+
+        function populateFilters() {
+            const ejeSet = new Set();
+            const minSet = new Set();
+            const intSet = new Set();
+
+            globalData.forEach(row => {
+                if (row['Eje']) ejeSet.add(row['Eje']);
+                if (row['Intervención']) intSet.add(row['Intervención']);
+                if (row['Ministerio(s)']) {
+                    const ministerios = extraerMinisterios(row['Ministerio(s)']);
+                    ministerios.forEach(min => minSet.add(min));
+                }
+            });
+
+            const ejeSelect = document.getElementById('ejeFilter');
+            ejeSelect.innerHTML = '<option value="Todos">Todos los Ejes</option>';
+            Array.from(ejeSet).sort().forEach(eje => ejeSelect.add(new Option(eje, eje)));
+
+            const minSelect = document.getElementById('ministerioFilter');
+            minSelect.innerHTML = '<option value="Todos">Todas las Entidades</option>';
+            Array.from(minSet).sort().forEach(min => minSelect.add(new Option(min, min)));
+
+            const intSelect = document.getElementById('intervencionFilter');
+            intSelect.innerHTML = '<option value="Todas">Todas las Intervenciones</option>';
+            Array.from(intSet).sort().forEach(intv => intSelect.add(new Option(intv, intv)));
+        }
+
+        // Aplica los filtros laterales y luego actualiza tablas y gráficos
+        function applyFilters() {
+            const ejeSelected = document.getElementById('ejeFilter').value;
+            const minSelected = document.getElementById('ministerioFilter').value;
+            const intSelected = document.getElementById('intervencionFilter').value;
+
+            lastFilteredData = globalData.filter(row => {
+                const matchEje = ejeSelected === 'Todos' || row['Eje'] === ejeSelected;
+                const matchInt = intSelected === 'Todas' || row['Intervención'] === intSelected;
+                
+                let matchMin = false;
+                if (minSelected === 'Todos') {
+                    matchMin = true;
+                } else if (row['Ministerio(s)']) {
+                    const ministeriosDeLaFila = extraerMinisterios(row['Ministerio(s)']);
+                    matchMin = ministeriosDeLaFila.includes(minSelected);
+                }
+
+                return matchEje && matchMin && matchInt;
+            });
+
+            document.getElementById('kpi-total').innerText = lastFilteredData.length;
+            updateTable();
+            updateChart();
+        }
+
+        function updateTable() {
+            const tbody = document.querySelector('#dataTable tbody');
+            tbody.innerHTML = '';
+
+            lastFilteredData.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row['Eje'] || '-'}</td>
+                    <td>${row['Intervención'] || '-'}</td>
+                    <td>${row['Ministerio(s)'] || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // NUEVA FUNCIÓN DINÁMICA DE GRÁFICO
+        function getDimValues(row, dimension) {
+            if (dimension === 'Ninguno') return ['Total'];
+            if (dimension === 'Ministerio(s)') return extraerMinisterios(row['Ministerio(s)']);
+            let valor = row[dimension];
+            return valor ? [valor.toString().trim()] : ['Sin ' + dimension];
+        }
+
+        function updateChart() {
+            if (!lastFilteredData || lastFilteredData.length === 0) return;
+
+            const ctx = document.getElementById('mainChart').getContext('2d');
+            
+            // Leer qué eligió el usuario en los selectores del gráfico
+            const dim1 = document.getElementById('chartDim1').value; // Eje Y (Vertical)
+            const dim2 = document.getElementById('chartDim2').value; // Colores / Agrupación
+
+            let labelsSet = new Set();
+            let conteo = {}; // Formato: { "Color/Grupo": { "Label Y": Cantidad } }
+
+            // Procesar los datos según las dimensiones seleccionadas
+            lastFilteredData.forEach(row => {
+                const valoresEjeY = getDimValues(row, dim1);
+                let valoresColor = getDimValues(row, dim2);
+                
+                if (valoresColor.length === 0) valoresColor = ["No definido"];
+
+                valoresEjeY.forEach(valY => {
+                    labelsSet.add(valY);
+                    valoresColor.forEach(valColor => {
+                        if (!conteo[valColor]) conteo[valColor] = {};
+                        if (!conteo[valColor][valY]) conteo[valColor][valY] = 0;
+                        conteo[valColor][valY]++;
+                    });
+                });
+            });
+
+            // Ordenar etiquetas del eje Y alfabéticamente
+            const labelsY = Array.from(labelsSet).sort();
+            const gruposColor = Object.keys(conteo).sort();
+            
+            // Crear los conjuntos de datos (datasets) para Chart.js
+            const datasets = gruposColor.map((grupo, index) => {
+                return {
+                    label: grupo,
+                    data: labelsY.map(label => conteo[grupo][label] || 0),
+                    backgroundColor: chartColors[index % chartColors.length],
+                    borderWidth: 1
+                };
+            });
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            // Ocultar leyenda si se selecciona "Ninguno" para evitar redudancia
+            const showLegend = (dim2 !== 'Ninguno');
+
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labelsY,
+                    datasets: datasets
+                },
+                options: {
+                    indexAxis: 'y', // Mantiene el gráfico en formato Horizontal
+                    responsive: true,
+                    maintainAspectRatio: false, // Permite que el gráfico llene el contenedor (útil para muchos ministerios)
+                    plugins: {
+                        legend: { position: 'top', display: showLegend },
+                        tooltip: { mode: 'index', intersect: false }
+                    },
+                    scales: {
+                        x: { 
+                            stacked: true, 
+                            beginAtZero: true, 
+                            ticks: { stepSize: 1 } 
+                        },
+                        y: { 
+                            stacked: true 
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
