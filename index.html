@@ -6,131 +6,94 @@
     <title>Plataforma de Monitoreo - Centro de Gobierno</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; }
-        .sidebar { box-shadow: inset -1px 0 0 rgba(0,0,0,.1); }
-        @media (min-width: 768px) {
-            .sidebar { position: sticky; top: 0; height: 100vh; overflow-y: auto; }
-        }
-        .card { border: none; border-radius: 10px; transition: transform 0.2s; }
-        .card:hover { transform: translateY(-2px); }
+        .sidebar { position: sticky; top: 0; height: 100vh; box-shadow: inset -1px 0 0 rgba(0,0,0,.1); }
+        .card { border: none; border-radius: 10px; }
         .table th { white-space: nowrap; }
-        .chart-container { position: relative; width: 100%; }
-        @media (max-width: 767px) { .chart-container { height: 350px; } }
-        @media (min-width: 768px) { .chart-container { height: 500px; } }
+        .chart-container { position: relative; height: 500px; width: 100%; }
+        /* Animación de carga */
         #loadingSpinner { display: none; }
-        
-        /* Colores de texto para semáforos */
-        .text-danger-custom { color: #dc3545 !important; font-weight: bold; }
-        .text-warning-custom { color: #d39e00 !important; font-weight: bold; }
-        .text-success-custom { color: #198754 !important; font-weight: bold; }
     </style>
 </head>
 <body>
-    <header class="navbar navbar-dark bg-dark sticky-top d-md-none flex-md-nowrap p-0 shadow">
-        <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6" href="#">🇧🇴 Tablero CdG</a>
-        <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-    </header>
-
     <div class="container-fluid">
         <div class="row">
-            
-            <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse text-white p-3">
-                <h4 class="text-center mb-4 d-none d-md-block pt-3">🇧🇴 Tablero CdG</h4>
-                <hr class="d-none d-md-block">
+            <nav class="col-md-3 col-lg-2 d-md-block bg-dark sidebar text-white p-3 min-vh-100">
+                <h4 class="text-center mb-4">🇧🇴 Tablero CdG</h4>
+                <hr>
                 
-                <div class="mb-4 p-3 bg-secondary bg-opacity-25 rounded border border-secondary" id="manualUploadContainer">
+                <div class="mb-4 p-2 bg-secondary rounded" id="manualUploadContainer">
                     <label for="excelFileInput" class="form-label text-white small fw-bold">Carga Manual (Opcional):</label>
                     <input class="form-control form-control-sm" type="file" id="excelFileInput" accept=".xlsx, .xls, .csv">
                 </div>
 
-                <h6 class="text-uppercase text-muted mt-4 mb-3 fw-bold">Filtros de Datos</h6>
-                
+                <h6 class="text-uppercase text-muted mt-4 mb-2">Filtros de Datos</h6>
                 <div class="mb-3">
-                    <label for="ejeFilter" class="form-label small mb-1">Eje:</label>
-                    <select id="ejeFilter" class="form-select form-select-sm shadow-sm" onchange="applyFilters()">
+                    <label for="ejeFilter" class="form-label small">Eje:</label>
+                    <select id="ejeFilter" class="form-select form-select-sm" onchange="applyFilters()">
                         <option value="Todos">Todos los Ejes</option>
                     </select>
                 </div>
                 
                 <div class="mb-3">
-                    <label for="ministerioFilter" class="form-label small mb-1">Entidad/Ministerio:</label>
-                    <select id="ministerioFilter" class="form-select form-select-sm shadow-sm" onchange="applyFilters()">
+                    <label for="ministerioFilter" class="form-label small">Entidad/Ministerio:</label>
+                    <select id="ministerioFilter" class="form-select form-select-sm" onchange="applyFilters()">
                         <option value="Todos">Todas las Entidades</option>
                     </select>
                 </div>
 
                 <div class="mb-3">
-                    <label for="intervencionFilter" class="form-label small mb-1">Intervención:</label>
-                    <select id="intervencionFilter" class="form-select form-select-sm shadow-sm" onchange="applyFilters()">
+                    <label for="intervencionFilter" class="form-label small">Intervención:</label>
+                    <select id="intervencionFilter" class="form-select form-select-sm" onchange="applyFilters()">
                         <option value="Todas">Todas las Intervenciones</option>
                     </select>
                 </div>
             </nav>
 
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4 bg-light min-vh-100">
-                
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-4 border-bottom">
-                    <h1 class="h2 fw-bold text-dark">Distribución de Intervenciones</h1>
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4 bg-light">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Distribución de Intervenciones</h1>
+                    
                     <div id="loadingSpinner" class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Cargando...</span>
                     </div>
                 </div>
 
-                <div id="welcomeMessage" class="alert alert-info shadow-sm border-0 border-start border-5 border-info" role="alert">
-                    Intentando cargar la matriz de indicadores automáticamente...
+                <div id="welcomeMessage" class="alert alert-info shadow-sm" role="alert">
+                    Intentando cargar la matriz de indicadores automáticamente... Si no sucede nada, utiliza el botón de carga manual en el menú lateral.
                 </div>
 
                 <div class="row mb-4" id="kpiSection" style="display: none;">
-                    <div class="col-12 col-md-4 mb-3">
-                        <div class="card text-white bg-primary shadow-sm h-100">
-                            <div class="card-body">
-                                <h6 class="card-title mb-1 opacity-75">Total Intervenciones Filtradas</h6>
-                                <h2 id="kpi-total" class="mb-0 fw-bold display-6">0</h2>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-12 col-md-4 mb-3">
-                        <div class="card text-white bg-danger shadow-sm h-100">
-                            <div class="card-body">
-                                <h6 class="card-title mb-1 opacity-75">Alertas Críticas (Rojo)</h6>
-                                <h2 id="kpi-criticos" class="mb-0 fw-bold display-6">0</h2>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-12 col-md-4 mb-3">
-                        <div class="card text-white bg-success shadow-sm h-100">
-                            <div class="card-body">
-                                <h6 class="card-title mb-1 opacity-75">Promedio IGP Global</h6>
-                                <h2 id="kpi-igp" class="mb-0 fw-bold display-6">0%</h2>
+                    <div class="col-md-4">
+                        <div class="card text-white bg-primary shadow-sm">
+                            <div class="card-body py-2">
+                                <h6 class="card-title mb-0">Total Intervenciones Filtradas</h6>
+                                <h2 id="kpi-total" class="mb-0">0</h2>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="row mb-4" id="chartSection" style="display: none;">
-                    <div class="col-12 bg-white p-4 rounded shadow-sm">
-                        <div class="row mb-4 pb-3 border-bottom g-3">
-                            <div class="col-12 col-md-6">
-                                <label class="form-label small fw-bold text-primary mb-1">Mostrar en el Eje Vertical:</label>
+                    <div class="col-md-12 bg-white p-3 rounded shadow-sm">
+                        <div class="row mb-3 pb-3 border-bottom">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-primary">Mostrar en el Eje Vertical:</label>
                                 <select id="chartDim1" class="form-select form-select-sm" onchange="updateChart()">
-                                    <option value="Ministerio(s)">Ministerios/Entidades</option>
                                     <option value="Eje">Ejes</option>
+                                    <option value="Ministerio(s)">Ministerios/Entidades</option>
                                     <option value="Intervención">Intervenciones</option>
                                 </select>
                             </div>
-                            <div class="col-12 col-md-6">
-                                <label class="form-label small fw-bold text-success mb-1">Agrupar por Colores:</label>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-success">Agrupar por Colores:</label>
                                 <select id="chartDim2" class="form-select form-select-sm" onchange="updateChart()">
-                                    <option value="Eje">Ejes</option>
                                     <option value="Ministerio(s)">Ministerios/Entidades</option>
-                                    <option value="Semáforo IGP">Semáforo IGP</option>
+                                    <option value="Eje">Ejes</option>
                                     <option value="Ninguno">Ninguno (Total Unificado)</option>
                                 </select>
                             </div>
@@ -141,24 +104,21 @@
                     </div>
                 </div>
 
-                <div class="bg-white p-4 rounded shadow-sm" id="tableSection" style="display: none;">
-                    <h5 class="fw-bold mb-3 text-secondary">Detalle Completo de Intervenciones</h5>
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover table-bordered border-light align-middle" id="dataTable">
+                <div class="bg-white p-3 rounded shadow-sm" id="tableSection" style="display: none;">
+                    <h5>Detalle de Intervenciones</h5>
+                    <div class="table-responsive mt-3">
+                        <table class="table table-striped table-hover table-sm" id="dataTable">
                             <thead class="table-dark">
                                 <tr>
-                                    <th scope="col">Eje</th>
-                                    <th scope="col">Intervención</th>
-                                    <th scope="col">Entidad(es) Involucrada(s)</th>
-                                    <th scope="col">Semáforo IGP</th>
-                                    <th scope="col">Acción Requerida</th>
+                                    <th>Eje</th>
+                                    <th>Intervención</th>
+                                    <th>Entidad(es) Involucrada(s)</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
                         </table>
                     </div>
                 </div>
-                
             </main>
         </div>
     </div>
@@ -168,68 +128,78 @@
         let lastFilteredData = []; 
         let chartInstance = null;
 
-        const DEFAULT_FILE_NAME = "./MATRIZ1.xlsx";
-        
+        // Nombre exacto del archivo que buscará automáticamente
+        const DEFAULT_FILE_NAME = "HMG Matriz_Indicadores_CdG_Bolivia_Completa.xlsx";
+
         const chartColors = [
             '#0d6efd', '#198754', '#ffc107', '#dc3545', '#6f42c1',
             '#fd7e14', '#0dcaf0', '#20c997', '#d63384', '#6610f2',
             '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'
         ];
 
-        // 1. CARGA AUTOMÁTICA
-        document.addEventListener('DOMContentLoaded', loadDefaultFile);
+        // 1. INTENTAR CARGAR AUTOMÁTICAMENTE AL INICIAR
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDefaultFile();
+        });
 
         async function loadDefaultFile() {
-            toggleLoader(true);
+            document.getElementById('loadingSpinner').style.display = 'block';
             try {
-                const url = DEFAULT_FILE_NAME + "?v=" + new Date().getTime();
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const response = await fetch(DEFAULT_FILE_NAME);
+                if (!response.ok) throw new Error("Archivo no encontrado o acceso bloqueado por CORS");
                 
                 const arrayBuffer = await response.arrayBuffer();
-                const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
+                const data = new Uint8Array(arrayBuffer);
+                const workbook = XLSX.read(data, {type: 'array'});
                 
                 processWorkbookData(workbook);
+                
+                // Ocultar sección de carga manual si el automático funcionó
                 document.getElementById('manualUploadContainer').style.display = 'none';
 
             } catch (error) {
-                console.warn("Carga automática omitida. Se requiere carga manual.");
+                console.warn("Carga automática omitida. Motivo: Ejecución local (doble clic) o archivo no encontrado. Se requiere carga manual.");
                 document.getElementById('welcomeMessage').innerHTML = `
-                    No se pudo cargar la matriz automáticamente (Error: ${error.message}). <br>
-                    <strong>Por favor, utiliza el botón "Carga Manual" en el menú lateral.</strong>
+                    No se pudo cargar la matriz automáticamente (posible bloqueo de seguridad del navegador). <br>
+                    <strong>Por favor, utiliza el botón "Carga Manual" en el menú de la izquierda para seleccionar tu archivo Excel.</strong>
                 `;
             } finally {
-                toggleLoader(false);
+                document.getElementById('loadingSpinner').style.display = 'none';
             }
         }
 
-        // CARGA MANUAL
+        // 2. EVENTO DE CARGA MANUAL (Fallback)
         document.getElementById('excelFileInput').addEventListener('change', function(event) {
             const file = event.target.files[0];
-            if (!file) return;
-
-            toggleLoader(true);
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
-                processWorkbookData(workbook);
-                toggleLoader(false);
-            };
-            reader.readAsArrayBuffer(file);
+            if (file) {
+                document.getElementById('loadingSpinner').style.display = 'block';
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    processWorkbookData(workbook);
+                    document.getElementById('loadingSpinner').style.display = 'none';
+                };
+                reader.readAsArrayBuffer(file);
+            }
         });
 
-        // 2. PROCESAMIENTO EXCEL
+        // 3. PROCESAMIENTO CENTRALIZADO DEL EXCEL
         function processWorkbookData(workbook) {
-            let sheetName = workbook.SheetNames.find(name => name.toLowerCase().includes('proceso')) || workbook.SheetNames[0];
-            const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { range: 3, defval: "" });
+            let sheetName = workbook.SheetNames.find(name => name.toLowerCase().includes('proceso'));
+            if (!sheetName) sheetName = workbook.SheetNames[0];
+
+            const worksheet = workbook.Sheets[sheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { range: 3, defval: "" });
 
             globalData = jsonData.filter(row => row['Eje'] && row['Eje'].toString().trim() !== '');
 
             if(globalData.length === 0) {
-                alert("No se encontraron datos. Verifica la estructura del archivo.");
+                alert("No se encontraron datos. Verifica la estructura de la Matriz.");
                 return;
             }
 
+            // Mostrar el dashboard
             document.getElementById('welcomeMessage').style.display = 'none';
             document.getElementById('kpiSection').style.display = 'flex';
             document.getElementById('chartSection').style.display = 'flex';
@@ -241,111 +211,71 @@
 
         function extraerMinisterios(cadena) {
             if (!cadena) return [];
-            return cadena.toString().split(/[;/]/).map(item => item.trim()).filter(item => item !== "");
+            return cadena.toString().split(/[;/,]/).map(item => item.trim()).filter(item => item !== "");
         }
 
-        // BÚSQUEDA INTELIGENTE DE COLUMNAS (ignora saltos de línea en Excel)
-        function findColumn(row, keyword) {
-            if(!row) return null;
-            return Object.keys(row).find(k => k.toLowerCase().includes(keyword.toLowerCase()));
-        }
-
-        // 3. FILTROS
         function populateFilters() {
-            const ejes = new Set(), ministerios = new Set(), intervenciones = new Set();
+            const ejeSet = new Set();
+            const minSet = new Set();
+            const intSet = new Set();
 
             globalData.forEach(row => {
-                if (row['Eje']) ejes.add(row['Eje']);
-                if (row['Intervención']) intervenciones.add(row['Intervención']);
+                if (row['Eje']) ejeSet.add(row['Eje']);
+                if (row['Intervención']) intSet.add(row['Intervención']);
                 if (row['Ministerio(s)']) {
-                    extraerMinisterios(row['Ministerio(s)']).forEach(min => ministerios.add(min));
+                    const ministerios = extraerMinisterios(row['Ministerio(s)']);
+                    ministerios.forEach(min => minSet.add(min));
                 }
             });
 
-            fillSelect('ejeFilter', ejes, 'Todos los Ejes');
-            fillSelect('ministerioFilter', ministerios, 'Todas las Entidades');
-            fillSelect('intervencionFilter', intervenciones, 'Todas las Intervenciones');
-        }
+            const ejeSelect = document.getElementById('ejeFilter');
+            ejeSelect.innerHTML = '<option value="Todos">Todos los Ejes</option>';
+            Array.from(ejeSet).sort().forEach(eje => ejeSelect.add(new Option(eje, eje)));
 
-        function fillSelect(elementId, dataSet, defaultText) {
-            const select = document.getElementById(elementId);
-            select.innerHTML = `<option value="Todos">${defaultText}</option>`;
-            Array.from(dataSet).sort().forEach(item => select.add(new Option(item, item)));
+            const minSelect = document.getElementById('ministerioFilter');
+            minSelect.innerHTML = '<option value="Todos">Todas las Entidades</option>';
+            Array.from(minSet).sort().forEach(min => minSelect.add(new Option(min, min)));
+
+            const intSelect = document.getElementById('intervencionFilter');
+            intSelect.innerHTML = '<option value="Todas">Todas las Intervenciones</option>';
+            Array.from(intSet).sort().forEach(intv => intSelect.add(new Option(intv, intv)));
         }
 
         function applyFilters() {
-            const ejeSel = document.getElementById('ejeFilter').value;
-            const minSel = document.getElementById('ministerioFilter').value;
-            const intSel = document.getElementById('intervencionFilter').value;
+            const ejeSelected = document.getElementById('ejeFilter').value;
+            const minSelected = document.getElementById('ministerioFilter').value;
+            const intSelected = document.getElementById('intervencionFilter').value;
 
             lastFilteredData = globalData.filter(row => {
-                const matchEje = ejeSel === 'Todos' || row['Eje'] === ejeSel;
-                const matchInt = intSel === 'Todas' || row['Intervención'] === intSel;
+                const matchEje = ejeSelected === 'Todos' || row['Eje'] === ejeSelected;
+                const matchInt = intSelected === 'Todas' || row['Intervención'] === intSelected;
                 
-                const mins = row['Ministerio(s)'] ? extraerMinisterios(row['Ministerio(s)']) : [];
-                const matchMin = minSel === 'Todos' || mins.includes(minSel);
+                let matchMin = false;
+                if (minSelected === 'Todos') {
+                    matchMin = true;
+                } else if (row['Ministerio(s)']) {
+                    const ministeriosDeLaFila = extraerMinisterios(row['Ministerio(s)']);
+                    matchMin = ministeriosDeLaFila.includes(minSelected);
+                }
 
                 return matchEje && matchMin && matchInt;
             });
 
-            updateKPIs();
+            document.getElementById('kpi-total').innerText = lastFilteredData.length;
             updateTable();
             updateChart();
-        }
-
-        // 4. RENDERIZAR INTERFAZ
-        function updateKPIs() {
-            document.getElementById('kpi-total').innerText = lastFilteredData.length;
-            
-            if(lastFilteredData.length === 0) return;
-
-            const semaforoKey = findColumn(lastFilteredData[0], 'semáforo igp') || 'Semáforo IGP';
-            const igpKey = findColumn(lastFilteredData[0], 'igp (%)') || 'IGP (%)';
-
-            let criticos = 0;
-            let sumaIGP = 0;
-            let conteoIGP = 0;
-
-            lastFilteredData.forEach(row => {
-                let sem = (row[semaforoKey] || '').toString().toUpperCase();
-                if(sem.includes('ROJO') || sem.includes('CRÍTICO')) criticos++;
-
-                let igpVal = row[igpKey];
-                if(igpVal !== undefined && igpVal !== "" && !isNaN(parseFloat(igpVal))) {
-                    sumaIGP += parseFloat(igpVal);
-                    conteoIGP++;
-                }
-            });
-
-            document.getElementById('kpi-criticos').innerText = criticos;
-            let promedio = conteoIGP === 0 ? 0 : (sumaIGP / conteoIGP).toFixed(1);
-            document.getElementById('kpi-igp').innerText = promedio + '%';
         }
 
         function updateTable() {
             const tbody = document.querySelector('#dataTable tbody');
             tbody.innerHTML = '';
-            
-            if(lastFilteredData.length === 0) return;
-
-            const semaforoKey = findColumn(lastFilteredData[0], 'semáforo igp') || 'Semáforo IGP';
-            const accionKey = findColumn(lastFilteredData[0], 'acción') || 'Acción Requerida';
 
             lastFilteredData.forEach(row => {
                 const tr = document.createElement('tr');
-                
-                let semText = (row[semaforoKey] || '').toString();
-                let semClass = '';
-                if(semText.toUpperCase().includes('ROJO') || semText.toUpperCase().includes('CRÍTICO')) semClass = 'text-danger-custom';
-                else if(semText.toUpperCase().includes('AMARILLO') || semText.toUpperCase().includes('DESARROLLO')) semClass = 'text-warning-custom';
-                else if(semText.toUpperCase().includes('VERDE') || semText.toUpperCase().includes('SATISFACTORIO')) semClass = 'text-success-custom';
-
                 tr.innerHTML = `
-                    <td class="fw-medium text-dark">${row['Eje'] || '-'}</td>
+                    <td>${row['Eje'] || '-'}</td>
                     <td>${row['Intervención'] || '-'}</td>
-                    <td class="text-muted">${row['Ministerio(s)'] || '-'}</td>
-                    <td class="${semClass}">${semText || '-'}</td>
-                    <td class="small">${row[accionKey] || '-'}</td>
+                    <td>${row['Ministerio(s)'] || '-'}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -354,14 +284,8 @@
         function getDimValues(row, dimension) {
             if (dimension === 'Ninguno') return ['Total'];
             if (dimension === 'Ministerio(s)') return extraerMinisterios(row['Ministerio(s)']);
-            
-            // Si la dimensión es Semáforo IGP, buscamos la columna inteligentemente
-            if (dimension === 'Semáforo IGP') {
-                const sKey = findColumn(row, 'semáforo igp') || 'Semáforo IGP';
-                return row[sKey] ? [row[sKey].toString().trim()] : ['Sin Semáforo'];
-            }
-            
-            return row[dimension] ? [row[dimension].toString().trim()] : [`Sin ${dimension}`];
+            let valor = row[dimension];
+            return valor ? [valor.toString().trim()] : ['Sin ' + dimension];
         }
 
         function updateChart() {
@@ -371,57 +295,55 @@
             const dim1 = document.getElementById('chartDim1').value; 
             const dim2 = document.getElementById('chartDim2').value; 
 
-            const labelsSet = new Set();
-            const conteo = {}; 
+            let labelsSet = new Set();
+            let conteo = {}; 
 
             lastFilteredData.forEach(row => {
-                const valYArray = getDimValues(row, dim1);
-                let valColorArray = getDimValues(row, dim2);
-                if (valColorArray.length === 0) valColorArray = ["No definido"];
+                const valoresEjeY = getDimValues(row, dim1);
+                let valoresColor = getDimValues(row, dim2);
+                
+                if (valoresColor.length === 0) valoresColor = ["No definido"];
 
-                valYArray.forEach(valY => {
+                valoresEjeY.forEach(valY => {
                     labelsSet.add(valY);
-                    valColorArray.forEach(valColor => {
+                    valoresColor.forEach(valColor => {
                         if (!conteo[valColor]) conteo[valColor] = {};
-                        conteo[valColor][valY] = (conteo[valColor][valY] || 0) + 1;
+                        if (!conteo[valColor][valY]) conteo[valColor][valY] = 0;
+                        conteo[valColor][valY]++;
                     });
                 });
             });
 
             const labelsY = Array.from(labelsSet).sort();
+            const gruposColor = Object.keys(conteo).sort();
             
-            // Asignación de colores fijos para semáforos si se agrupa por Semáforo IGP
-            const isSemaforo = dim2 === 'Semáforo IGP';
-
-            const datasets = Object.keys(conteo).sort().map((grupo, index) => {
-                let bgColor = chartColors[index % chartColors.length];
-                
-                if (isSemaforo) {
-                    if (grupo.toUpperCase().includes('ROJO') || grupo.toUpperCase().includes('CRÍTICO')) bgColor = '#dc3545';
-                    else if (grupo.toUpperCase().includes('AMARILLO') || grupo.toUpperCase().includes('DESARROLLO')) bgColor = '#ffc107';
-                    else if (grupo.toUpperCase().includes('VERDE') || grupo.toUpperCase().includes('SATISFACTORIO')) bgColor = '#198754';
-                }
-
+            const datasets = gruposColor.map((grupo, index) => {
                 return {
                     label: grupo,
                     data: labelsY.map(label => conteo[grupo][label] || 0),
-                    backgroundColor: bgColor,
-                    borderWidth: 1,
-                    borderRadius: 4 
+                    backgroundColor: chartColors[index % chartColors.length],
+                    borderWidth: 1
                 };
             });
 
-            if (chartInstance) chartInstance.destroy();
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            const showLegend = (dim2 !== 'Ninguno');
 
             chartInstance = new Chart(ctx, {
                 type: 'bar',
-                data: { labels: labelsY, datasets: datasets },
+                data: {
+                    labels: labelsY,
+                    datasets: datasets
+                },
                 options: {
                     indexAxis: 'y', 
                     responsive: true,
                     maintainAspectRatio: false, 
                     plugins: {
-                        legend: { position: 'top', display: (dim2 !== 'Ninguno') },
+                        legend: { position: 'top', display: showLegend },
                         tooltip: { mode: 'index', intersect: false }
                     },
                     scales: {
@@ -430,10 +352,6 @@
                     }
                 }
             });
-        }
-
-        function toggleLoader(show) {
-            document.getElementById('loadingSpinner').style.display = show ? 'inline-block' : 'none';
         }
     </script>
 </body>
