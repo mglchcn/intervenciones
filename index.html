@@ -11,61 +11,29 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
-        /* === ESTILOS BASE === */
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: #f8f9fa; 
-        }
-        
-        /* === BARRA LATERAL (SIDEBAR) === */
-        .sidebar { 
-            box-shadow: inset -1px 0 0 rgba(0,0,0,.1); 
-        }
-        
-        /* Comportamiento en Monitores (Desktop) */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; }
+        .sidebar { box-shadow: inset -1px 0 0 rgba(0,0,0,.1); }
         @media (min-width: 768px) {
-            .sidebar { 
-                position: sticky; 
-                top: 0; 
-                height: 100vh; 
-                overflow-y: auto;
-            }
+            .sidebar { position: sticky; top: 0; height: 100vh; overflow-y: auto; }
         }
-
-        /* === COMPONENTES UI === */
-        .card { 
-            border: none; 
-            border-radius: 10px; 
-            transition: transform 0.2s;
-        }
-        .card:hover {
-            transform: translateY(-2px);
-        }
-        .table th { 
-            white-space: nowrap; 
-        }
-        
-        /* === GRÁFICOS (RESPONSIVOS) === */
-        .chart-container { 
-            position: relative; 
-            width: 100%; 
-        }
-        
-        @media (max-width: 767px) {
-            .chart-container { height: 350px; } /* Altura reducida para móviles */
-        }
-        @media (min-width: 768px) {
-            .chart-container { height: 500px; } /* Altura completa para PC */
-        }
-
-        /* Animación de carga */
+        .card { border: none; border-radius: 10px; transition: transform 0.2s; }
+        .card:hover { transform: translateY(-2px); }
+        .table th { white-space: nowrap; }
+        .chart-container { position: relative; width: 100%; }
+        @media (max-width: 767px) { .chart-container { height: 350px; } }
+        @media (min-width: 768px) { .chart-container { height: 500px; } }
         #loadingSpinner { display: none; }
+        
+        /* Colores de texto para semáforos */
+        .text-danger-custom { color: #dc3545 !important; font-weight: bold; }
+        .text-warning-custom { color: #d39e00 !important; font-weight: bold; }
+        .text-success-custom { color: #198754 !important; font-weight: bold; }
     </style>
 </head>
 <body>
     <header class="navbar navbar-dark bg-dark sticky-top d-md-none flex-md-nowrap p-0 shadow">
         <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6" href="#">🇧🇴 Tablero CdG</a>
-        <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation" style="right: 15px; top: 10px;">
+        <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
     </header>
@@ -116,15 +84,31 @@
                 </div>
 
                 <div id="welcomeMessage" class="alert alert-info shadow-sm border-0 border-start border-5 border-info" role="alert">
-                    Intentando cargar la matriz de indicadores automáticamente... Si no sucede nada, utiliza el botón de carga manual en el menú lateral.
+                    Intentando cargar la matriz de indicadores automáticamente...
                 </div>
 
                 <div class="row mb-4" id="kpiSection" style="display: none;">
-                    <div class="col-12 col-md-6 col-xl-4">
+                    <div class="col-12 col-md-4 mb-3">
                         <div class="card text-white bg-primary shadow-sm h-100">
-                            <div class="card-body d-flex flex-column justify-content-center">
+                            <div class="card-body">
                                 <h6 class="card-title mb-1 opacity-75">Total Intervenciones Filtradas</h6>
                                 <h2 id="kpi-total" class="mb-0 fw-bold display-6">0</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-4 mb-3">
+                        <div class="card text-white bg-danger shadow-sm h-100">
+                            <div class="card-body">
+                                <h6 class="card-title mb-1 opacity-75">Alertas Críticas (Rojo)</h6>
+                                <h2 id="kpi-criticos" class="mb-0 fw-bold display-6">0</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-4 mb-3">
+                        <div class="card text-white bg-success shadow-sm h-100">
+                            <div class="card-body">
+                                <h6 class="card-title mb-1 opacity-75">Promedio IGP Global</h6>
+                                <h2 id="kpi-igp" class="mb-0 fw-bold display-6">0%</h2>
                             </div>
                         </div>
                     </div>
@@ -132,26 +116,25 @@
 
                 <div class="row mb-4" id="chartSection" style="display: none;">
                     <div class="col-12 bg-white p-4 rounded shadow-sm">
-                        
                         <div class="row mb-4 pb-3 border-bottom g-3">
                             <div class="col-12 col-md-6">
                                 <label class="form-label small fw-bold text-primary mb-1">Mostrar en el Eje Vertical:</label>
                                 <select id="chartDim1" class="form-select form-select-sm" onchange="updateChart()">
-                                    <option value="Eje">Ejes</option>
                                     <option value="Ministerio(s)">Ministerios/Entidades</option>
+                                    <option value="Eje">Ejes</option>
                                     <option value="Intervención">Intervenciones</option>
                                 </select>
                             </div>
                             <div class="col-12 col-md-6">
                                 <label class="form-label small fw-bold text-success mb-1">Agrupar por Colores:</label>
                                 <select id="chartDim2" class="form-select form-select-sm" onchange="updateChart()">
-                                    <option value="Ministerio(s)">Ministerios/Entidades</option>
                                     <option value="Eje">Ejes</option>
+                                    <option value="Ministerio(s)">Ministerios/Entidades</option>
+                                    <option value="Semáforo IGP">Semáforo IGP</option>
                                     <option value="Ninguno">Ninguno (Total Unificado)</option>
                                 </select>
                             </div>
                         </div>
-                        
                         <div class="chart-container">
                             <canvas id="mainChart"></canvas>
                         </div>
@@ -159,7 +142,7 @@
                 </div>
 
                 <div class="bg-white p-4 rounded shadow-sm" id="tableSection" style="display: none;">
-                    <h5 class="fw-bold mb-3 text-secondary">Detalle de Intervenciones</h5>
+                    <h5 class="fw-bold mb-3 text-secondary">Detalle Completo de Intervenciones</h5>
                     <div class="table-responsive">
                         <table class="table table-striped table-hover table-bordered border-light align-middle" id="dataTable">
                             <thead class="table-dark">
@@ -167,10 +150,11 @@
                                     <th scope="col">Eje</th>
                                     <th scope="col">Intervención</th>
                                     <th scope="col">Entidad(es) Involucrada(s)</th>
+                                    <th scope="col">Semáforo IGP</th>
+                                    <th scope="col">Acción Requerida</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                </tbody>
+                            <tbody></tbody>
                         </table>
                     </div>
                 </div>
@@ -180,12 +164,10 @@
     </div>
 
     <script>
-        // --- 1. CONFIGURACIÓN Y VARIABLES GLOBALES ---
         let globalData = [];
         let lastFilteredData = []; 
         let chartInstance = null;
 
-        // Se usa ruta relativa explícita (./) para GitHub Pages
         const DEFAULT_FILE_NAME = "./MATRIZ1.xlsx";
         
         const chartColors = [
@@ -194,20 +176,15 @@
             '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'
         ];
 
-        // --- 2. INICIALIZACIÓN Y CARGA DE DATOS ---
+        // 1. CARGA AUTOMÁTICA
         document.addEventListener('DOMContentLoaded', loadDefaultFile);
 
         async function loadDefaultFile() {
             toggleLoader(true);
             try {
-                // TÉCNICA CACHE-BUSTER: Agrega un parámetro de tiempo para que GitHub Pages
-                // siempre entregue la última versión del archivo y evite errores 404 oxidados.
                 const url = DEFAULT_FILE_NAME + "?v=" + new Date().getTime();
-                
                 const response = await fetch(url);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 
                 const arrayBuffer = await response.arrayBuffer();
                 const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
@@ -216,10 +193,9 @@
                 document.getElementById('manualUploadContainer').style.display = 'none';
 
             } catch (error) {
-                console.warn("Error al cargar archivo automáticamente. Detalles:", error);
+                console.warn("Carga automática omitida. Se requiere carga manual.");
                 document.getElementById('welcomeMessage').innerHTML = `
-                    No se pudo cargar <strong>MATRIZ1.xlsx</strong> automáticamente. <br>
-                    <span class="text-danger small">(Error: ${error.message})</span><br>
+                    No se pudo cargar la matriz automáticamente (Error: ${error.message}). <br>
                     <strong>Por favor, utiliza el botón "Carga Manual" en el menú lateral.</strong>
                 `;
             } finally {
@@ -227,6 +203,7 @@
             }
         }
 
+        // CARGA MANUAL
         document.getElementById('excelFileInput').addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -241,7 +218,7 @@
             reader.readAsArrayBuffer(file);
         });
 
-        // --- 3. PROCESAMIENTO CENTRALIZADO ---
+        // 2. PROCESAMIENTO EXCEL
         function processWorkbookData(workbook) {
             let sheetName = workbook.SheetNames.find(name => name.toLowerCase().includes('proceso')) || workbook.SheetNames[0];
             const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { range: 3, defval: "" });
@@ -249,11 +226,10 @@
             globalData = jsonData.filter(row => row['Eje'] && row['Eje'].toString().trim() !== '');
 
             if(globalData.length === 0) {
-                alert("No se encontraron datos válidos. Verifica la estructura de la Matriz.");
+                alert("No se encontraron datos. Verifica la estructura del archivo.");
                 return;
             }
 
-            // Revelar la interfaz
             document.getElementById('welcomeMessage').style.display = 'none';
             document.getElementById('kpiSection').style.display = 'flex';
             document.getElementById('chartSection').style.display = 'flex';
@@ -263,12 +239,18 @@
             applyFilters();
         }
 
-        // --- 4. UTILIDADES Y FILTROS ---
         function extraerMinisterios(cadena) {
             if (!cadena) return [];
             return cadena.toString().split(/[;/]/).map(item => item.trim()).filter(item => item !== "");
         }
 
+        // BÚSQUEDA INTELIGENTE DE COLUMNAS (ignora saltos de línea en Excel)
+        function findColumn(row, keyword) {
+            if(!row) return null;
+            return Object.keys(row).find(k => k.toLowerCase().includes(keyword.toLowerCase()));
+        }
+
+        // 3. FILTROS
         function populateFilters() {
             const ejes = new Set(), ministerios = new Set(), intervenciones = new Set();
 
@@ -306,22 +288,64 @@
                 return matchEje && matchMin && matchInt;
             });
 
-            document.getElementById('kpi-total').innerText = lastFilteredData.length;
+            updateKPIs();
             updateTable();
             updateChart();
         }
 
-        // --- 5. RENDERIZADO VISUAL (TABLAS Y GRÁFICOS) ---
+        // 4. RENDERIZAR INTERFAZ
+        function updateKPIs() {
+            document.getElementById('kpi-total').innerText = lastFilteredData.length;
+            
+            if(lastFilteredData.length === 0) return;
+
+            const semaforoKey = findColumn(lastFilteredData[0], 'semáforo igp') || 'Semáforo IGP';
+            const igpKey = findColumn(lastFilteredData[0], 'igp (%)') || 'IGP (%)';
+
+            let criticos = 0;
+            let sumaIGP = 0;
+            let conteoIGP = 0;
+
+            lastFilteredData.forEach(row => {
+                let sem = (row[semaforoKey] || '').toString().toUpperCase();
+                if(sem.includes('ROJO') || sem.includes('CRÍTICO')) criticos++;
+
+                let igpVal = row[igpKey];
+                if(igpVal !== undefined && igpVal !== "" && !isNaN(parseFloat(igpVal))) {
+                    sumaIGP += parseFloat(igpVal);
+                    conteoIGP++;
+                }
+            });
+
+            document.getElementById('kpi-criticos').innerText = criticos;
+            let promedio = conteoIGP === 0 ? 0 : (sumaIGP / conteoIGP).toFixed(1);
+            document.getElementById('kpi-igp').innerText = promedio + '%';
+        }
+
         function updateTable() {
             const tbody = document.querySelector('#dataTable tbody');
             tbody.innerHTML = '';
+            
+            if(lastFilteredData.length === 0) return;
+
+            const semaforoKey = findColumn(lastFilteredData[0], 'semáforo igp') || 'Semáforo IGP';
+            const accionKey = findColumn(lastFilteredData[0], 'acción') || 'Acción Requerida';
 
             lastFilteredData.forEach(row => {
                 const tr = document.createElement('tr');
+                
+                let semText = (row[semaforoKey] || '').toString();
+                let semClass = '';
+                if(semText.toUpperCase().includes('ROJO') || semText.toUpperCase().includes('CRÍTICO')) semClass = 'text-danger-custom';
+                else if(semText.toUpperCase().includes('AMARILLO') || semText.toUpperCase().includes('DESARROLLO')) semClass = 'text-warning-custom';
+                else if(semText.toUpperCase().includes('VERDE') || semText.toUpperCase().includes('SATISFACTORIO')) semClass = 'text-success-custom';
+
                 tr.innerHTML = `
                     <td class="fw-medium text-dark">${row['Eje'] || '-'}</td>
                     <td>${row['Intervención'] || '-'}</td>
                     <td class="text-muted">${row['Ministerio(s)'] || '-'}</td>
+                    <td class="${semClass}">${semText || '-'}</td>
+                    <td class="small">${row[accionKey] || '-'}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -330,6 +354,13 @@
         function getDimValues(row, dimension) {
             if (dimension === 'Ninguno') return ['Total'];
             if (dimension === 'Ministerio(s)') return extraerMinisterios(row['Ministerio(s)']);
+            
+            // Si la dimensión es Semáforo IGP, buscamos la columna inteligentemente
+            if (dimension === 'Semáforo IGP') {
+                const sKey = findColumn(row, 'semáforo igp') || 'Semáforo IGP';
+                return row[sKey] ? [row[sKey].toString().trim()] : ['Sin Semáforo'];
+            }
+            
             return row[dimension] ? [row[dimension].toString().trim()] : [`Sin ${dimension}`];
         }
 
@@ -343,7 +374,6 @@
             const labelsSet = new Set();
             const conteo = {}; 
 
-            // Agrupar datos según selecciones
             lastFilteredData.forEach(row => {
                 const valYArray = getDimValues(row, dim1);
                 let valColorArray = getDimValues(row, dim2);
@@ -359,13 +389,27 @@
             });
 
             const labelsY = Array.from(labelsSet).sort();
-            const datasets = Object.keys(conteo).sort().map((grupo, index) => ({
-                label: grupo,
-                data: labelsY.map(label => conteo[grupo][label] || 0),
-                backgroundColor: chartColors[index % chartColors.length],
-                borderWidth: 1,
-                borderRadius: 4 
-            }));
+            
+            // Asignación de colores fijos para semáforos si se agrupa por Semáforo IGP
+            const isSemaforo = dim2 === 'Semáforo IGP';
+
+            const datasets = Object.keys(conteo).sort().map((grupo, index) => {
+                let bgColor = chartColors[index % chartColors.length];
+                
+                if (isSemaforo) {
+                    if (grupo.toUpperCase().includes('ROJO') || grupo.toUpperCase().includes('CRÍTICO')) bgColor = '#dc3545';
+                    else if (grupo.toUpperCase().includes('AMARILLO') || grupo.toUpperCase().includes('DESARROLLO')) bgColor = '#ffc107';
+                    else if (grupo.toUpperCase().includes('VERDE') || grupo.toUpperCase().includes('SATISFACTORIO')) bgColor = '#198754';
+                }
+
+                return {
+                    label: grupo,
+                    data: labelsY.map(label => conteo[grupo][label] || 0),
+                    backgroundColor: bgColor,
+                    borderWidth: 1,
+                    borderRadius: 4 
+                };
+            });
 
             if (chartInstance) chartInstance.destroy();
 
