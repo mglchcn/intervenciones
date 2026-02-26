@@ -15,6 +15,8 @@
         .card { border: none; border-radius: 10px; }
         .table th { white-space: nowrap; }
         .chart-container { position: relative; height: 500px; width: 100%; }
+        /* Animación de carga */
+        #loadingSpinner { display: none; }
     </style>
 </head>
 <body>
@@ -24,8 +26,8 @@
                 <h4 class="text-center mb-4">🇧🇴 Tablero CdG</h4>
                 <hr>
                 
-                <div class="mb-4 p-2 bg-secondary rounded">
-                    <label for="excelFileInput" class="form-label text-white small fw-bold">1. Cargar Archivo Excel:</label>
+                <div class="mb-4 p-2 bg-secondary rounded" id="manualUploadContainer">
+                    <label for="excelFileInput" class="form-label text-white small fw-bold">Carga Manual (Opcional):</label>
                     <input class="form-control form-control-sm" type="file" id="excelFileInput" accept=".xlsx, .xls, .csv">
                 </div>
 
@@ -55,10 +57,14 @@
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4 bg-light">
                 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
                     <h1 class="h2">Distribución de Intervenciones</h1>
+                    
+                    <div id="loadingSpinner" class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
                 </div>
 
                 <div id="welcomeMessage" class="alert alert-info shadow-sm" role="alert">
-                    Bienvenido. Haz clic en el botón <strong>"Elegir archivo"</strong> en el menú lateral izquierdo y selecciona la Matriz de Indicadores para cargar los datos offline.
+                    Intentando cargar la matriz de indicadores automáticamente... Si no sucede nada, utiliza el botón de carga manual en el menú lateral.
                 </div>
 
                 <div class="row mb-4" id="kpiSection" style="display: none;">
@@ -74,10 +80,9 @@
 
                 <div class="row mb-4" id="chartSection" style="display: none;">
                     <div class="col-md-12 bg-white p-3 rounded shadow-sm">
-                        
                         <div class="row mb-3 pb-3 border-bottom">
                             <div class="col-md-4">
-                                <label class="form-label small fw-bold text-primary">Mostrar en el Eje Principal (Vertical):</label>
+                                <label class="form-label small fw-bold text-primary">Mostrar en el Eje Vertical:</label>
                                 <select id="chartDim1" class="form-select form-select-sm" onchange="updateChart()">
                                     <option value="Eje">Ejes</option>
                                     <option value="Ministerio(s)">Ministerios/Entidades</option>
@@ -85,7 +90,7 @@
                                 </select>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label small fw-bold text-success">Agrupar por Colores (Divisiones):</label>
+                                <label class="form-label small fw-bold text-success">Agrupar por Colores:</label>
                                 <select id="chartDim2" class="form-select form-select-sm" onchange="updateChart()">
                                     <option value="Ministerio(s)">Ministerios/Entidades</option>
                                     <option value="Eje">Ejes</option>
@@ -93,7 +98,6 @@
                                 </select>
                             </div>
                         </div>
-
                         <div class="chart-container">
                             <canvas id="mainChart"></canvas>
                         </div>
@@ -121,8 +125,11 @@
 
     <script>
         let globalData = [];
-        let lastFilteredData = []; // Guardará los datos tras aplicar filtros
+        let lastFilteredData = []; 
         let chartInstance = null;
+
+        // Nombre exacto del archivo que buscará automáticamente
+        const DEFAULT_FILE_NAME = "HMG Matriz_Indicadores_CdG_Bolivia_Completa.xlsx";
 
         const chartColors = [
             '#0d6efd', '#198754', '#ffc107', '#dc3545', '#6f42c1',
@@ -130,42 +137,81 @@
             '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'
         ];
 
+        // 1. INTENTAR CARGAR AUTOMÁTICAMENTE AL INICIAR
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDefaultFile();
+        });
+
+        async function loadDefaultFile() {
+            document.getElementById('loadingSpinner').style.display = 'block';
+            try {
+                const response = await fetch(DEFAULT_FILE_NAME);
+                if (!response.ok) throw new Error("Archivo no encontrado o acceso bloqueado por CORS");
+                
+                const arrayBuffer = await response.arrayBuffer();
+                const data = new Uint8Array(arrayBuffer);
+                const workbook = XLSX.read(data, {type: 'array'});
+                
+                processWorkbookData(workbook);
+                
+                // Ocultar sección de carga manual si el automático funcionó
+                document.getElementById('manualUploadContainer').style.display = 'none';
+
+            } catch (error) {
+                console.warn("Carga automática omitida. Motivo: Ejecución local (doble clic) o archivo no encontrado. Se requiere carga manual.");
+                document.getElementById('welcomeMessage').innerHTML = `
+                    No se pudo cargar la matriz automáticamente (posible bloqueo de seguridad del navegador). <br>
+                    <strong>Por favor, utiliza el botón "Carga Manual" en el menú de la izquierda para seleccionar tu archivo Excel.</strong>
+                `;
+            } finally {
+                document.getElementById('loadingSpinner').style.display = 'none';
+            }
+        }
+
+        // 2. EVENTO DE CARGA MANUAL (Fallback)
         document.getElementById('excelFileInput').addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (file) {
+                document.getElementById('loadingSpinner').style.display = 'block';
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, {type: 'array'});
-                    
-                    let sheetName = workbook.SheetNames.find(name => name.toLowerCase().includes('proceso'));
-                    if (!sheetName) sheetName = workbook.SheetNames[0];
-
-                    const worksheet = workbook.Sheets[sheetName];
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { range: 3, defval: "" });
-
-                    globalData = jsonData.filter(row => row['Eje'] && row['Eje'].toString().trim() !== '');
-
-                    if(globalData.length === 0) {
-                        alert("No se encontraron datos. Verifica que seleccionaste la Matriz correcta.");
-                        return;
-                    }
-
-                    document.getElementById('welcomeMessage').style.display = 'none';
-                    document.getElementById('kpiSection').style.display = 'flex';
-                    document.getElementById('chartSection').style.display = 'flex';
-                    document.getElementById('tableSection').style.display = 'block';
-
-                    populateFilters();
-                    applyFilters();
+                    processWorkbookData(workbook);
+                    document.getElementById('loadingSpinner').style.display = 'none';
                 };
                 reader.readAsArrayBuffer(file);
             }
         });
 
+        // 3. PROCESAMIENTO CENTRALIZADO DEL EXCEL
+        function processWorkbookData(workbook) {
+            let sheetName = workbook.SheetNames.find(name => name.toLowerCase().includes('proceso'));
+            if (!sheetName) sheetName = workbook.SheetNames[0];
+
+            const worksheet = workbook.Sheets[sheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { range: 3, defval: "" });
+
+            globalData = jsonData.filter(row => row['Eje'] && row['Eje'].toString().trim() !== '');
+
+            if(globalData.length === 0) {
+                alert("No se encontraron datos. Verifica la estructura de la Matriz.");
+                return;
+            }
+
+            // Mostrar el dashboard
+            document.getElementById('welcomeMessage').style.display = 'none';
+            document.getElementById('kpiSection').style.display = 'flex';
+            document.getElementById('chartSection').style.display = 'flex';
+            document.getElementById('tableSection').style.display = 'block';
+
+            populateFilters();
+            applyFilters();
+        }
+
         function extraerMinisterios(cadena) {
             if (!cadena) return [];
-            return cadena.toString().split(/[;/]/).map(item => item.trim()).filter(item => item !== "");
+            return cadena.toString().split(/[;/,]/).map(item => item.trim()).filter(item => item !== "");
         }
 
         function populateFilters() {
@@ -195,7 +241,6 @@
             Array.from(intSet).sort().forEach(intv => intSelect.add(new Option(intv, intv)));
         }
 
-        // Aplica los filtros laterales y luego actualiza tablas y gráficos
         function applyFilters() {
             const ejeSelected = document.getElementById('ejeFilter').value;
             const minSelected = document.getElementById('ministerioFilter').value;
@@ -236,7 +281,6 @@
             });
         }
 
-        // NUEVA FUNCIÓN DINÁMICA DE GRÁFICO
         function getDimValues(row, dimension) {
             if (dimension === 'Ninguno') return ['Total'];
             if (dimension === 'Ministerio(s)') return extraerMinisterios(row['Ministerio(s)']);
@@ -248,15 +292,12 @@
             if (!lastFilteredData || lastFilteredData.length === 0) return;
 
             const ctx = document.getElementById('mainChart').getContext('2d');
-            
-            // Leer qué eligió el usuario en los selectores del gráfico
-            const dim1 = document.getElementById('chartDim1').value; // Eje Y (Vertical)
-            const dim2 = document.getElementById('chartDim2').value; // Colores / Agrupación
+            const dim1 = document.getElementById('chartDim1').value; 
+            const dim2 = document.getElementById('chartDim2').value; 
 
             let labelsSet = new Set();
-            let conteo = {}; // Formato: { "Color/Grupo": { "Label Y": Cantidad } }
+            let conteo = {}; 
 
-            // Procesar los datos según las dimensiones seleccionadas
             lastFilteredData.forEach(row => {
                 const valoresEjeY = getDimValues(row, dim1);
                 let valoresColor = getDimValues(row, dim2);
@@ -273,11 +314,9 @@
                 });
             });
 
-            // Ordenar etiquetas del eje Y alfabéticamente
             const labelsY = Array.from(labelsSet).sort();
             const gruposColor = Object.keys(conteo).sort();
             
-            // Crear los conjuntos de datos (datasets) para Chart.js
             const datasets = gruposColor.map((grupo, index) => {
                 return {
                     label: grupo,
@@ -291,7 +330,6 @@
                 chartInstance.destroy();
             }
 
-            // Ocultar leyenda si se selecciona "Ninguno" para evitar redudancia
             const showLegend = (dim2 !== 'Ninguno');
 
             chartInstance = new Chart(ctx, {
@@ -301,22 +339,16 @@
                     datasets: datasets
                 },
                 options: {
-                    indexAxis: 'y', // Mantiene el gráfico en formato Horizontal
+                    indexAxis: 'y', 
                     responsive: true,
-                    maintainAspectRatio: false, // Permite que el gráfico llene el contenedor (útil para muchos ministerios)
+                    maintainAspectRatio: false, 
                     plugins: {
                         legend: { position: 'top', display: showLegend },
                         tooltip: { mode: 'index', intersect: false }
                     },
                     scales: {
-                        x: { 
-                            stacked: true, 
-                            beginAtZero: true, 
-                            ticks: { stepSize: 1 } 
-                        },
-                        y: { 
-                            stacked: true 
-                        }
+                        x: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } },
+                        y: { stacked: true }
                     }
                 }
             });
