@@ -185,6 +185,7 @@
         let lastFilteredData = []; 
         let chartInstance = null;
 
+        // Se usa ruta relativa explícita (./) para GitHub Pages
         const DEFAULT_FILE_NAME = "./MATRIZ1.xlsx";
         
         const chartColors = [
@@ -199,8 +200,14 @@
         async function loadDefaultFile() {
             toggleLoader(true);
             try {
-                const response = await fetch(DEFAULT_FILE_NAME);
-                if (!response.ok) throw new Error("Archivo no encontrado o acceso bloqueado por CORS");
+                // TÉCNICA CACHE-BUSTER: Agrega un parámetro de tiempo para que GitHub Pages
+                // siempre entregue la última versión del archivo y evite errores 404 oxidados.
+                const url = DEFAULT_FILE_NAME + "?v=" + new Date().getTime();
+                
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 
                 const arrayBuffer = await response.arrayBuffer();
                 const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
@@ -209,9 +216,10 @@
                 document.getElementById('manualUploadContainer').style.display = 'none';
 
             } catch (error) {
-                console.warn("Carga automática omitida. Se requiere carga manual.", error);
+                console.warn("Error al cargar archivo automáticamente. Detalles:", error);
                 document.getElementById('welcomeMessage').innerHTML = `
-                    No se pudo cargar la matriz automáticamente. <br>
+                    No se pudo cargar <strong>MATRIZ1.xlsx</strong> automáticamente. <br>
+                    <span class="text-danger small">(Error: ${error.message})</span><br>
                     <strong>Por favor, utiliza el botón "Carga Manual" en el menú lateral.</strong>
                 `;
             } finally {
@@ -356,7 +364,7 @@
                 data: labelsY.map(label => conteo[grupo][label] || 0),
                 backgroundColor: chartColors[index % chartColors.length],
                 borderWidth: 1,
-                borderRadius: 4 // Bordes ligeramente redondeados en las barras
+                borderRadius: 4 
             }));
 
             if (chartInstance) chartInstance.destroy();
@@ -385,5 +393,4 @@
         }
     </script>
 </body>
-</html> 
-
+</html>
