@@ -31,7 +31,9 @@
     position: sticky; top: 0; z-index: 100;
   }
   .logo-area { display: flex; align-items: center; gap: 1rem; }
-  .logo-svg  { width: 54px; height: 54px; flex-shrink: 0; }
+  /* Ajuste para el nuevo logo imagen */
+  .logo-img { height: 54px; width: auto; flex-shrink: 0; display: block; }
+  
   .logo-text-block { display: flex; flex-direction: column; gap: .08rem; }
   .logo-cengob { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 2.1rem; color: #fff; letter-spacing: .05em; line-height: 1; }
   .logo-sub { display: block; background: var(--dorado); color: #fff; font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: .52rem; letter-spacing: .18em; text-transform: uppercase; padding: .22rem .6rem .24rem; }
@@ -141,15 +143,9 @@
 </head>
 <body>
 
-<!-- TOPBAR -->
 <div class="topbar">
   <div class="logo-area">
-    <svg class="logo-svg" viewBox="0 0 60 60" fill="none">
-      <path d="M8 32 A25 25 0 0 1 40 8"  stroke="#c9a84c" stroke-width="3"   stroke-linecap="round" fill="none" opacity=".4"/>
-      <path d="M12 32 A20 20 0 0 1 40 13" stroke="#c9a84c" stroke-width="3"   stroke-linecap="round" fill="none" opacity=".65"/>
-      <path d="M16 32 A15 15 0 0 1 40 18" stroke="#c9a84c" stroke-width="3.5" stroke-linecap="round" fill="none"/>
-      <path d="M48 22 A18 18 0 1 0 48 42 L38 42 L38 34 L48 34" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-    </svg>
+    <img src="a.png" alt="Logo CENGOB" class="logo-img">
     <div class="logo-text-block">
       <div class="logo-cengob">CENGOB</div>
       <div>
@@ -161,14 +157,12 @@
   <div class="topbar-right">Sistema de Indicadores<br>Panel de Intervenciones Estratégicas</div>
 </div>
 
-<!-- SUBHEADER -->
 <div class="subheader">
   <span class="sub-label">Ejes Estratégicos</span>
   <span class="sub-sep">|</span>
   <span class="sub-desc">Intervenciones · Ministerios Responsables · Análisis Cruzado</span>
 </div>
 
-<!-- NAV TABS -->
 <div class="nav-tabs">
   <button class="tab-btn active" onclick="switchTab('resumen', this)">📊 Resumen</button>
   <button class="tab-btn" onclick="switchTab('analisis', this)">🔀 Análisis Cruzado</button>
@@ -176,8 +170,6 @@
 </div>
 
 <div class="main">
-
-  <!-- ══ TAB 1: RESUMEN ══ -->
   <div id="tab-resumen" class="tab-panel active">
     <div class="stats">
       <div class="stat-card"><div class="stat-n">7</div><div class="stat-l">Ejes<br>Estratégicos</div></div>
@@ -211,7 +203,6 @@
     </div>
   </div>
 
-  <!-- ══ TAB 2: ANÁLISIS CRUZADO ══ -->
   <div id="tab-analisis" class="tab-panel">
     <div class="charts-grid">
       <div class="chart-card">
@@ -238,7 +229,6 @@
     </div>
   </div>
 
-  <!-- ══ TAB 3: DETALLE ══ -->
   <div id="tab-detalle" class="tab-panel">
     <div class="controls">
       <button class="btn-ctrl" onclick="toggleAll(true)">▾ Expandir todo</button>
@@ -260,12 +250,12 @@
 </div>
 
 <script>
-/* ═══════════════════ DATA (verificado: 32 intervenciones, 7 ejes, 14 Min. + INRA) ═══════════════════ */
+/* (El script permanece idéntico al proporcionado anteriormente) */
 const EJES = [
   { eje:"Economía para la Gente",      code:"EJE 1",   color:"#1a6b35",
     items:[
-      { name:"Ley de Hidrocarburos",                                                       mins:["Ministerio de Hidrocarburos y Energías"] },
-      { name:"Reforma Ley General del Trabajo",                                            mins:["Ministerio de Trabajo"] },
+      { name:"Ley de Hidrocarburos",                                                  mins:["Ministerio de Hidrocarburos y Energías"] },
+      { name:"Reforma Ley General del Trabajo",                                             mins:["Ministerio de Trabajo"] },
       { name:"Reformas e incentivos tributarios",                                          mins:["Ministerio de Economía"] },
       { name:"Fuentes de financiamiento turismo-cultura-gastronomía",                      mins:["Ministerio de Turismo Sostenible","Ministerio de Economía"] },
       { name:"Autorizaciones transitorias Ley Minera (CAM)",                               mins:["Ministerio de Minería y Metalurgia"] },
@@ -280,41 +270,41 @@ const EJES = [
       { name:"Posicionamiento minero PDAC 2026 – RIGI",                                   mins:["Ministerio de Minería y Metalurgia"] },
     ]
   },
-  { eje:"Bolivia 50/50",               code:"EJE 3",   color:"#c0272d",
+  { eje:"Bolivia 50/50",                code:"EJE 3",   color:"#c0272d",
     items:[
       { name:"Nueva Ley de Autonomías",                                                    mins:["Ministerio de la Presidencia"] },
       { name:"Nuevo Sistema Nacional de Salud",                                            mins:["Ministerio de Salud y Deportes"] },
-      { name:"Reordenamiento Sistema Educativo",                                           mins:["Ministerio de Educación"] },
-      { name:"Participación laboral de mujeres (cuidados)",                                mins:["Ministerio de Trabajo"] },
-      { name:"Nueva Ley de Seguridad Ciudadana",                                           mins:["Ministerio de Gobierno"] },
+      { name:"Reordenamiento Sistema Educativo",                                            mins:["Ministerio de Educación"] },
+      { name:"Participación laboral de mujeres (cuidados)",                                 mins:["Ministerio de Trabajo"] },
+      { name:"Nueva Ley de Seguridad Ciudadana",                                            mins:["Ministerio de Gobierno"] },
     ]
   },
   { eje:"Modernización y Transparencia", code:"EJE 4-5", color:"#5e3d8f",
     items:[
-      { name:"Desregulación y desburocratización",                                         mins:["Ministerio de la Presidencia"] },
-      { name:"Integración ciudadanía digital",                                             mins:["Ministerio de la Presidencia"] },
-      { name:"Modernización del SPIE",                                                     mins:["Ministerio de Planificación del Desarrollo"] },
+      { name:"Desregulación y desburocratización",                                          mins:["Ministerio de la Presidencia"] },
+      { name:"Integración ciudadanía digital",                                              mins:["Ministerio de la Presidencia"] },
+      { name:"Modernización del SPIE",                                                      mins:["Ministerio de Planificación del Desarrollo"] },
       { name:"Adecuación a normas de transparencia y lucha contra la corrupción con estándares internacionales", mins:["Ministerio de la Presidencia"] },
-      { name:"Actualizar los reglamentos de los sistemas de la Ley N°1178",                mins:["Ministerio de Planificación del Desarrollo"] },
+      { name:"Actualizar los reglamentos de los sistemas de la Ley N°1178",                 mins:["Ministerio de Planificación del Desarrollo"] },
       { name:"Norma organización Órgano Ejecutivo",                                        mins:["Ministerio de la Presidencia"] },
     ]
   },
-  { eje:"Bienestar para Todos",        code:"EJE 6",   color:"#1461a0",
+  { eje:"Bienestar para Todos",         code:"EJE 6",   color:"#1461a0",
     items:[
       { name:"Redes integradas intersectoriales",                                          mins:["Ministerio de Salud y Deportes"] },
       { name:"Atención primaria – capacidad resolutiva",                                   mins:["Ministerio de Salud y Deportes"] },
       { name:"Garantizar horas, transparencia y mejoras",                                  mins:["Ministerio de Educación"] },
-      { name:"Escuelas normales (3.000 mejores postulantes)",                              mins:["Ministerio de Educación"] },
-      { name:"Agua, saneamiento y vivienda",                                               mins:["Ministerio de Desarrollo Productivo Rural y Agua"] },
+      { name:"Escuelas normales (3.000 mejores postulantes)",                               mins:["Ministerio de Educación"] },
+      { name:"Agua, saneamiento y vivienda",                                                mins:["Ministerio de Desarrollo Productivo Rural y Agua"] },
       { name:"Intersectorial (Educación, Salud, Agua, Vivienda) Zonas Nuevas de saneamiento", mins:["Ministerio de la Presidencia"] },
     ]
   },
-  { eje:"Verde y Sostenible",          code:"EJE 7",   color:"#2d6a30",
+  { eje:"Verde y Sostenible",           code:"EJE 7",   color:"#2d6a30",
     items:[
-      { name:"Ley de Medio Ambiente (Ley 1333)",                                           mins:["Ministerio de Defensa","Ministerio de Hidrocarburos y Energías"] },
+      { name:"Ley de Medio Ambiente (Ley 1333)",                                            mins:["Ministerio de Defensa","Ministerio de Hidrocarburos y Energías"] },
       { name:"Reforma normativa (Energía Verde, Forestal, Agua)",                          mins:["Ministerio de Hidrocarburos y Energías"] },
       { name:"Taxonomía verde",                                                            mins:["Ministerio de Planificación del Desarrollo","Ministerio de Hidrocarburos y Energías"] },
-      { name:"Fortalecimiento de la Prevención de desastres naturales",                    mins:["Ministerio de Defensa"] },
+      { name:"Fortalecimiento de la Prevención de desastres naturales",                     mins:["Ministerio de Defensa"] },
       { name:"Proceso de saneamiento de tierras (+ modif. de la Ley INRA)",               mins:["Ministerio de Planificación del Desarrollo","Ministerio de la Presidencia"] },
     ]
   }
@@ -324,8 +314,8 @@ const MIN_SHORT = {
   "Ministerio de Hidrocarburos y Energías":         "Hidrocarburos y Energías",
   "Ministerio de Trabajo":                           "Trabajo",
   "Ministerio de Economía":                          "Economía",
-  "Ministerio de Turismo Sostenible":                "Turismo Sostenible",
-  "Ministerio de Minería y Metalurgia":              "Minería y Metalurgia",
+  "Ministerio de Turismo Sostenible":                 "Turismo Sostenible",
+  "Ministerio de Minería y Metalurgia":               "Minería y Metalurgia",
   "Ministerio de Obras Públicas":                    "Obras Públicas",
   "Ministerio de Desarrollo Productivo Rural y Agua":"Des. Productivo y Agua",
   "Ministerio de Relaciones Exteriores":             "Relaciones Exteriores",
@@ -334,11 +324,9 @@ const MIN_SHORT = {
   "Ministerio de Educación":                         "Educación",
   "Ministerio de Gobierno":                          "Gobierno",
   "Ministerio de Planificación del Desarrollo":      "Planificación",
-  "Ministerio de Defensa":                           "Defensa",
-  /*"INRA":                                            "INRA"*/
+  "Ministerio de Defensa":                           "Defensa"
 };
 
-/* ─ helpers ─ */
 function minCount() {
   const c = {};
   EJES.forEach(e => e.items.forEach(i => i.mins.forEach(m => { c[m]=(c[m]||0)+1; })));
@@ -356,7 +344,6 @@ function minPerEje() {
 Chart.defaults.font.family = "'Open Sans', sans-serif";
 Chart.defaults.plugins.legend.display = false;
 
-/* ── CHART 1: Barras por eje ── */
 function buildBarEjes() {
   const pluginEtiquetasVerticales = {
     id: 'etiquetasVerticales',
@@ -405,7 +392,6 @@ function buildBarEjes() {
   });
 }
 
-/* ── CHART 2: Donut ── */
 function buildDonut() {
   new Chart(document.getElementById('chartDonut'), {
     type:'doughnut',
@@ -419,7 +405,6 @@ function buildDonut() {
   EJES.forEach(e => { leg.innerHTML += `<div class="legend-item"><div class="legend-dot" style="background:${e.color}"></div>${e.code} – ${e.eje} (${e.items.length})</div>`; });
 }
 
-/* ── CHART 3: Ranking ministerios ── */
 function buildMinBar() {
   const counts = minCount();
   const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
@@ -439,7 +424,6 @@ function buildMinBar() {
   });
 }
 
-/* ── CHART 4: Radar ── */
 function buildRadar() {
   new Chart(document.getElementById('chartRadar'), {
     type:'radar',
@@ -471,7 +455,6 @@ function buildRadar() {
   });
 }
 
-/* ── CHART 5: Stacked ministerios multi-eje ── */
 function buildStacked() {
   const mpe = minPerEje();
   const counts = minCount();
@@ -490,7 +473,6 @@ function buildStacked() {
   });
 }
 
-/* ── CRUCE TABLE ── */
 function buildCruce() {
   const mpe = minPerEje();
   const allMins = Object.keys(mpe).sort((a,b)=>{
@@ -516,7 +498,6 @@ function buildCruce() {
   table.innerHTML = html;
 }
 
-/* ── DETAIL ── */
 function buildDetail() {
   const container = document.getElementById('ejes');
   const sel = document.getElementById('filterMin');
@@ -572,7 +553,6 @@ function switchTab(name, btn){
   btn.classList.add('active');
 }
 
-/* ── INIT ── */
 buildBarEjes();
 buildDonut();
 buildMinBar();
