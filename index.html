@@ -244,7 +244,7 @@
 </div>
 
 <script>
-/* (El script permanece idéntico al proporcionado anteriormente) */
+
 const EJES = [
   { eje:"Economía para la Gente",      code:"EJE 1",   color:"#1a6b35",
     items:[
@@ -350,11 +350,11 @@ function buildBarEjes() {
         const yTop = bar.y;
         const yBottom = y.getPixelForValue(0);
         const barHeight = yBottom - yTop;
-        const fullLabel = `${EJES[i].code}  –  ${EJES[i].eje}`;
+        const fullLabel = /*`${EJES[i].code}  –  */ `${EJES[i].eje}`;
         ctx.save();
         ctx.translate(xPos, yTop + barHeight / 2);
         ctx.rotate(-Math.PI / 2);
-        ctx.textAlign = 'center';
+        ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
         ctx.fillStyle = 'rgba(255,255,255,0.95)';
         ctx.font = 'bold 9px Montserrat, Open Sans, sans-serif';
@@ -561,6 +561,7 @@ buildDetail();
 </script>
 </body>
 </html>
+
 
 
 
